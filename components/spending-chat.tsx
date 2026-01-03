@@ -62,10 +62,18 @@ export function SpendingChat({ data, onViewTransactions }: SpendingChatProps) {
         const key = getTransactionKey(item.date, item.description, item.amount)
         return {
           ...item,
-          adjustedAmount: Math.abs(getAdjustedAmount(item.amount, key)),
+          adjustedAmount: getAdjustedAmount(item.amount, key),
           effectiveCategory: getCategory(item.category, key),
         }
       })
+    }
+
+    // Helper to calculate net spending (purchases - returns)
+    const calculateNetSpending = (items: typeof adjustedData) => {
+      return items.reduce(
+        (sum, item) => sum + Math.abs(Math.min(0, item.adjustedAmount)) - Math.max(0, item.adjustedAmount),
+        0,
+      )
     }
 
     const adjustedData = getAdjustedData()
@@ -88,13 +96,15 @@ export function SpendingChat({ data, onViewTransactions }: SpendingChatProps) {
           const matches = adjustedData.filter((item) => item.description.toLowerCase().includes(merchantQuery))
 
           if (matches.length > 0) {
-            const total = matches.reduce((sum, item) => sum + item.adjustedAmount, 0)
+            const total = calculateNetSpending(matches)
             const merchantMap: Record<string, { total: number; count: number }> = {}
             matches.forEach((item) => {
               if (!merchantMap[item.description]) {
                 merchantMap[item.description] = { total: 0, count: 0 }
               }
-              merchantMap[item.description].total += item.adjustedAmount
+              const itemNet =
+                Math.abs(Math.min(0, item.adjustedAmount)) - Math.max(0, item.adjustedAmount)
+              merchantMap[item.description].total += itemNet
               merchantMap[item.description].count += 1
             })
 
@@ -127,7 +137,8 @@ export function SpendingChat({ data, onViewTransactions }: SpendingChatProps) {
     ) {
       const categoryMap: Record<string, number> = {}
       adjustedData.forEach((item) => {
-        categoryMap[item.effectiveCategory] = (categoryMap[item.effectiveCategory] || 0) + item.adjustedAmount
+        const itemNet = Math.abs(Math.min(0, item.adjustedAmount)) - Math.max(0, item.adjustedAmount)
+        categoryMap[item.effectiveCategory] = (categoryMap[item.effectiveCategory] || 0) + itemNet
       })
 
       const categories = Object.entries(categoryMap)
@@ -173,11 +184,12 @@ export function SpendingChat({ data, onViewTransactions }: SpendingChatProps) {
     for (const [name, abbrev] of Object.entries(monthNames)) {
       if (lowerQuery.includes(name)) {
         const monthData = adjustedData.filter((item) => item.month === abbrev)
-        const total = monthData.reduce((sum, item) => sum + item.adjustedAmount, 0)
+        const total = calculateNetSpending(monthData)
 
         const categoryMap: Record<string, number> = {}
         monthData.forEach((item) => {
-          categoryMap[item.effectiveCategory] = (categoryMap[item.effectiveCategory] || 0) + item.adjustedAmount
+          const itemNet = Math.abs(Math.min(0, item.adjustedAmount)) - Math.max(0, item.adjustedAmount)
+          categoryMap[item.effectiveCategory] = (categoryMap[item.effectiveCategory] || 0) + itemNet
         })
 
         const categories = Object.entries(categoryMap)
@@ -196,7 +208,7 @@ export function SpendingChat({ data, onViewTransactions }: SpendingChatProps) {
 
     // Check for total spending
     if (lowerQuery.includes("total") && (lowerQuery.includes("spend") || lowerQuery.includes("year"))) {
-      const total = adjustedData.reduce((sum, item) => sum + item.adjustedAmount, 0)
+      const total = calculateNetSpending(adjustedData)
       return {
         id,
         type: "assistant" as const,
@@ -207,10 +219,10 @@ export function SpendingChat({ data, onViewTransactions }: SpendingChatProps) {
 
     // Check for card-specific queries
     const cardNames: Record<string, string> = {
-      "chase sapphire": "chase-reserve",
-      sapphire: "chase-reserve",
-      reserve: "chase-reserve",
-      amazon: "chase-amazon",
+      "chase sapphire": "chase-sapphire",
+      sapphire: "chase-sapphire",
+      reserve: "chase-sapphire",
+      amazon: "amazon",
       amex: "amex",
       platinum: "amex",
       checking: "checking",
@@ -219,7 +231,7 @@ export function SpendingChat({ data, onViewTransactions }: SpendingChatProps) {
     for (const [name, cardKey] of Object.entries(cardNames)) {
       if (lowerQuery.includes(name)) {
         const cardData = adjustedData.filter((item) => item.card === cardKey)
-        const total = cardData.reduce((sum, item) => sum + item.adjustedAmount, 0)
+        const total = calculateNetSpending(cardData)
 
         return {
           id,
