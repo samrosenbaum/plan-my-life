@@ -11,13 +11,13 @@ interface CardSelectorProps {
 const cards = [
   { id: "all" as CardType, name: "All Cards", icon: "💳", color: "#6366F1" },
   {
-    id: "chase-reserve" as CardType,
+    id: "chase-sapphire" as CardType,
     name: "Sapphire Reserve",
     icon: "💎",
     color: "#1E3A8A",
   },
   {
-    id: "chase-amazon" as CardType,
+    id: "amazon" as CardType,
     name: "Amazon Card",
     icon: "📦",
     color: "#F97316",

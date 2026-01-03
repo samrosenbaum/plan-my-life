@@ -13,10 +13,10 @@ import { SpendingStats } from "./spending-stats"
 import { TransactionModal } from "./transaction-modal"
 import { MerchantSearch } from "./merchant-search"
 import { SpendingChat } from "./spending-chat"
-import { chaseReserveData, chaseAmazonData, amexData, checkingData } from "@/lib/spending-data"
+import { chaseReserveData, amazonCardData, amexData, checkingData } from "@/lib/spending-data"
 import { useCredits, getTransactionKey } from "@/lib/credits-context"
 
-export type CardType = "all" | "chase-reserve" | "chase-amazon" | "amex" | "checking"
+export type CardType = "all" | "chase-sapphire" | "amazon" | "amex" | "checking"
 
 type ModalContext = { type: "category"; value: string } | { type: "month"; value: string } | null
 
@@ -32,11 +32,11 @@ export default function SpendingDashboard() {
   const allCardData = useMemo(() => {
     let data: typeof chaseReserveData = []
 
-    if (selectedCard === "all" || selectedCard === "chase-reserve") {
+    if (selectedCard === "all" || selectedCard === "chase-sapphire") {
       data = [...data, ...chaseReserveData]
     }
-    if (selectedCard === "all" || selectedCard === "chase-amazon") {
-      data = [...data, ...chaseAmazonData]
+    if (selectedCard === "all" || selectedCard === "amazon") {
+      data = [...data, ...amazonCardData]
     }
     if (selectedCard === "all" || selectedCard === "amex") {
       data = [...data, ...amexData]
