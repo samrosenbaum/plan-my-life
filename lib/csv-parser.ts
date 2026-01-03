@@ -47,24 +47,51 @@ function detectDataYear(transactions: Transaction[]): number {
 function parseChaseCSV(csv: string, card: "chase-sapphire" | "amazon"): Transaction[] {
   const lines = csv.trim().split("\n")
   const transactions: Transaction[] = []
+  const errors: string[] = []
+
+  // Validate CSV has content
+  if (lines.length < 2) {
+    console.warn(`[CSV Parser] ${card}: CSV has no data rows`)
+    return transactions
+  }
 
   for (let i = 1; i < lines.length; i++) {
     const line = lines[i].trim()
     if (!line) continue
 
     const parts = line.split(",")
-    if (parts.length < 6) continue
+    if (parts.length < 6) {
+      errors.push(`Line ${i + 1}: Invalid format (expected 6+ columns, got ${parts.length})`)
+      continue
+    }
 
-    const date = parts[0]
-    const description = parts[2]
-    const category = parts[3]
-    const type = parts[4]
-    const amountStr = parts[5]
+    const date = parts[0]?.trim()
+    const description = parts[2]?.trim()
+    const category = parts[3]?.trim()
+    const type = parts[4]?.trim()
+    const amountStr = parts[5]?.trim()
 
-    if (type === "Payment" || description.includes("AUTOMATIC PAYMENT")) continue
+    // Skip payments
+    if (type === "Payment" || description?.includes("AUTOMATIC PAYMENT")) continue
 
+    // Validate required fields
+    if (!date || !description || !amountStr) {
+      errors.push(`Line ${i + 1}: Missing required fields`)
+      continue
+    }
+
+    // Validate amount is a number
     const amount = Number.parseFloat(amountStr)
-    if (isNaN(amount)) continue
+    if (isNaN(amount)) {
+      errors.push(`Line ${i + 1}: Invalid amount "${amountStr}"`)
+      continue
+    }
+
+    // Validate date format (MM/DD/YYYY)
+    if (!/^\d{1,2}\/\d{1,2}\/\d{4}$/.test(date)) {
+      errors.push(`Line ${i + 1}: Invalid date format "${date}" (expected MM/DD/YYYY)`)
+      continue
+    }
 
     const isReturn = amount > 0
 
@@ -79,29 +106,64 @@ function parseChaseCSV(csv: string, card: "chase-sapphire" | "amazon"): Transact
     })
   }
 
+  // Log errors if any (but don't throw - we want partial data)
+  if (errors.length > 0) {
+    console.warn(`[CSV Parser] ${card}: Found ${errors.length} error(s):`, errors.slice(0, 5))
+    if (errors.length > 5) {
+      console.warn(`[CSV Parser] ${card}: ... and ${errors.length - 5} more`)
+    }
+  }
+
   return transactions
 }
 
 function parseAmexCSV(csv: string): Transaction[] {
   const lines = csv.trim().split("\n")
   const transactions: Transaction[] = []
+  const errors: string[] = []
+
+  // Validate CSV has content
+  if (lines.length < 2) {
+    console.warn("[CSV Parser] amex: CSV has no data rows")
+    return transactions
+  }
 
   for (let i = 1; i < lines.length; i++) {
     const line = lines[i].trim()
     if (!line) continue
 
     const parts = line.split(",")
-    if (parts.length < 4) continue
+    if (parts.length < 4) {
+      errors.push(`Line ${i + 1}: Invalid format (expected 4+ columns, got ${parts.length})`)
+      continue
+    }
 
-    const date = parts[0]
-    const description = parts[1]
-    const amountStr = parts[2]
-    const category = parts[3] || "Other"
+    const date = parts[0]?.trim()
+    const description = parts[1]?.trim()
+    const amountStr = parts[2]?.trim()
+    const category = parts[3]?.trim() || "Other"
 
-    if (description.includes("PAYMENT") || description.includes("AUTOPAY")) continue
+    // Skip payments
+    if (description?.includes("PAYMENT") || description?.includes("AUTOPAY")) continue
 
+    // Validate required fields
+    if (!date || !description || !amountStr) {
+      errors.push(`Line ${i + 1}: Missing required fields`)
+      continue
+    }
+
+    // Validate amount is a number
     const amount = Number.parseFloat(amountStr)
-    if (isNaN(amount)) continue
+    if (isNaN(amount)) {
+      errors.push(`Line ${i + 1}: Invalid amount "${amountStr}"`)
+      continue
+    }
+
+    // Validate date format (MM/DD/YYYY)
+    if (!/^\d{1,2}\/\d{1,2}\/\d{4}$/.test(date)) {
+      errors.push(`Line ${i + 1}: Invalid date format "${date}" (expected MM/DD/YYYY)`)
+      continue
+    }
 
     // Amex: positive = purchase, negative = credit/return
     const isReturn = amount < 0
@@ -116,6 +178,14 @@ function parseAmexCSV(csv: string): Transaction[] {
       card: "amex",
       isReturn,
     })
+  }
+
+  // Log errors if any (but don't throw - we want partial data)
+  if (errors.length > 0) {
+    console.warn(`[CSV Parser] amex: Found ${errors.length} error(s):`, errors.slice(0, 5))
+    if (errors.length > 5) {
+      console.warn(`[CSV Parser] amex: ... and ${errors.length - 5} more`)
+    }
   }
 
   return transactions

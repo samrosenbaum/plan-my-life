@@ -9,22 +9,27 @@ interface SpendingStatsProps {
 }
 
 export function SpendingStats({ totalSpending, transactionCount, avgTransaction }: SpendingStatsProps) {
+  // Safeguard against invalid values
+  const safeTotal = Number.isFinite(totalSpending) ? totalSpending : 0
+  const safeCount = Number.isFinite(transactionCount) && transactionCount >= 0 ? transactionCount : 0
+  const safeAvg = Number.isFinite(avgTransaction) ? avgTransaction : 0
+
   const stats = [
     {
       label: "Total Spent",
-      value: `$${totalSpending.toLocaleString(undefined, { maximumFractionDigits: 0 })}`,
+      value: `$${safeTotal.toLocaleString(undefined, { maximumFractionDigits: 0 })}`,
       icon: "💰",
       color: "#F97316",
     },
     {
       label: "Transactions",
-      value: transactionCount.toLocaleString(),
+      value: safeCount.toLocaleString(),
       icon: "🧾",
       color: "#3B82F6",
     },
     {
       label: "Avg. Transaction",
-      value: `$${avgTransaction.toLocaleString(undefined, { maximumFractionDigits: 0 })}`,
+      value: `$${safeAvg.toLocaleString(undefined, { maximumFractionDigits: 0 })}`,
       icon: "📊",
       color: "#10B981",
     },
