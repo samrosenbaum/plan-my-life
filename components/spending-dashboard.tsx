@@ -167,7 +167,7 @@ export default function SpendingDashboard() {
         {/* Header */}
         <div className="text-center mb-8">
           <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-2 font-sketch">2025 Spending Tracker</h1>
-          <p className="text-muted-foreground text-lg">Your hand-drawn financial journey</p>
+          <p className="text-muted-foreground text-lg">{"Where tf does my money go"}</p>
         </div>
 
         {/* Merchant Search Bar */}
