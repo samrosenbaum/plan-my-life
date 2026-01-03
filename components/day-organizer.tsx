@@ -1,12 +1,13 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo, useCallback } from "react"
 import { ActivityPalette } from "./activity-palette"
 import { ScheduleBoard } from "./schedule-board"
 import { CustomBlockCreator } from "./custom-block-creator"
 import { WeekView } from "./week-view"
 import { MonthView } from "./month-view"
 import { YearView } from "./year-view"
+import { TodaysEssentials } from "./todays-essentials"
 import { ViewSwitcher } from "./view-switcher"
 import type { ActivityBlock, DaySchedule, ViewMode } from "@/lib/types"
 import { SketchPuzzleIcon } from "./sketch-puzzle-icon"
@@ -72,11 +73,12 @@ export function DayOrganizer() {
     {},
   )
 
-  const [viewMode, setViewMode] = useState<ViewMode>("day")
+  const [viewMode, setViewMode] = useState<ViewMode>("essentials")
   const [currentPSTTime, setCurrentPSTTime] = useState<Date>(getPSTDate())
   const [selectedDate, setSelectedDate] = useState<Date>(getPSTDate())
   const [draggedActivity, setDraggedActivity] = useState<ActivityBlock | null>(null)
   const [isHydrated, setIsHydrated] = useState(false)
+  const [editingActivity, setEditingActivity] = useState<ActivityBlock | null>(null)
 
   useEffect(() => {
     setIsHydrated(true)
@@ -90,15 +92,18 @@ export function DayOrganizer() {
   }, [])
 
   const selectedDateKey = formatDateKey(selectedDate)
-  const currentSchedule = schedulesByDate[selectedDateKey] || createEmptySchedule(selectedDateKey)
+  const currentSchedule = useMemo(
+    () => schedulesByDate[selectedDateKey] || createEmptySchedule(selectedDateKey),
+    [schedulesByDate, selectedDateKey]
+  )
 
-  const handleDragStart = (activity: ActivityBlock) => {
+  const handleDragStart = useCallback((activity: ActivityBlock) => {
     setDraggedActivity(activity)
-  }
+  }, [])
 
-  const handleDragEnd = () => {
+  const handleDragEnd = useCallback(() => {
     setDraggedActivity(null)
-  }
+  }, [])
 
   const handleDrop = (slotId: string, duration = 1) => {
     if (draggedActivity) {
@@ -322,6 +327,19 @@ export function DayOrganizer() {
     setActivities((prev) => [...prev, block])
   }
 
+  const handleEditActivity = (activity: ActivityBlock) => {
+    setEditingActivity(activity)
+  }
+
+  const handleUpdateActivity = (updatedActivity: ActivityBlock) => {
+    setActivities((prev) => prev.map((a) => (a.id === updatedActivity.id ? updatedActivity : a)))
+    setEditingActivity(null)
+  }
+
+  const handleDeleteActivity = (activityId: string) => {
+    setActivities((prev) => prev.filter((a) => a.id !== activityId))
+  }
+
   const handleSelectDate = (date: Date) => {
     setSelectedDate(date)
     setViewMode("day")
@@ -383,6 +401,10 @@ export function DayOrganizer() {
 
       <ViewSwitcher viewMode={viewMode} onViewChange={setViewMode} />
 
+      {viewMode === "essentials" && (
+        <TodaysEssentials schedule={currentSchedule} onToggleComplete={handleToggleComplete} />
+      )}
+
       {viewMode === "day" && (
         <div className="flex flex-col gap-6">
           {/* Activities Panel - now at top */}
@@ -392,9 +414,22 @@ export function DayOrganizer() {
                 <SketchPuzzleIcon className="h-5 w-5 text-primary" />
                 <h2 className="font-mono text-sm tracking-wide text-foreground">activities</h2>
               </div>
-              <CustomBlockCreator onAddBlock={handleAddCustomBlock} compact />
+              <CustomBlockCreator
+                onAddBlock={handleAddCustomBlock}
+                onUpdateBlock={handleUpdateActivity}
+                editingActivity={editingActivity}
+                onCancelEdit={() => setEditingActivity(null)}
+                compact
+              />
             </div>
-            <ActivityPalette activities={activities} onDragStart={handleDragStart} onDragEnd={handleDragEnd} inline />
+            <ActivityPalette
+              activities={activities}
+              onDragStart={handleDragStart}
+              onDragEnd={handleDragEnd}
+              onEditActivity={handleEditActivity}
+              onDeleteActivity={handleDeleteActivity}
+              inline
+            />
           </div>
 
           {/* Schedule Board - now below */}

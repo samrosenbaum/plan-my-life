@@ -2,13 +2,16 @@
 
 import type React from "react"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import type { ActivityBlock } from "@/lib/types"
 import { Plus } from "lucide-react"
 import { ActivityIcon } from "./activity-icon"
 
 interface CustomBlockCreatorProps {
   onAddBlock: (block: ActivityBlock) => void
+  onUpdateBlock?: (block: ActivityBlock) => void
+  editingActivity?: ActivityBlock | null
+  onCancelEdit?: () => void
   compact?: boolean // Added compact prop for inline header usage
 }
 
@@ -24,28 +27,58 @@ const presetColors = [
 
 const presetIcons = ["star", "heart", "book", "coffee", "music", "sun", "moon", "zap"]
 
-export function CustomBlockCreator({ onAddBlock, compact }: CustomBlockCreatorProps) {
+export function CustomBlockCreator({ onAddBlock, onUpdateBlock, editingActivity, onCancelEdit, compact }: CustomBlockCreatorProps) {
   const [isOpen, setIsOpen] = useState(false)
   const [label, setLabel] = useState("")
   const [selectedColor, setSelectedColor] = useState(presetColors[0])
   const [selectedIcon, setSelectedIcon] = useState(presetIcons[0])
 
+  // Populate form when editing
+  useEffect(() => {
+    if (editingActivity) {
+      setLabel(editingActivity.label)
+      setSelectedColor(editingActivity.color)
+      setSelectedIcon(editingActivity.icon)
+      setIsOpen(true)
+    }
+  }, [editingActivity])
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     if (!label.trim()) return
 
-    const newBlock: ActivityBlock = {
-      id: `custom-${Date.now()}`,
-      label: label.trim(),
-      icon: selectedIcon,
-      color: selectedColor,
+    if (editingActivity && onUpdateBlock) {
+      // Update existing activity
+      const updatedBlock: ActivityBlock = {
+        ...editingActivity,
+        label: label.trim(),
+        icon: selectedIcon,
+        color: selectedColor,
+      }
+      onUpdateBlock(updatedBlock)
+    } else {
+      // Create new activity
+      const newBlock: ActivityBlock = {
+        id: `custom-${Date.now()}`,
+        label: label.trim(),
+        icon: selectedIcon,
+        color: selectedColor,
+      }
+      onAddBlock(newBlock)
     }
 
-    onAddBlock(newBlock)
     setLabel("")
     setSelectedColor(presetColors[0])
     setSelectedIcon(presetIcons[0])
     setIsOpen(false)
+  }
+
+  const handleCancel = () => {
+    setLabel("")
+    setSelectedColor(presetColors[0])
+    setSelectedIcon(presetIcons[0])
+    setIsOpen(false)
+    if (onCancelEdit) onCancelEdit()
   }
 
   if (compact) {
@@ -53,23 +86,32 @@ export function CustomBlockCreator({ onAddBlock, compact }: CustomBlockCreatorPr
       <div className="relative">
         <button
           onClick={() => setIsOpen(!isOpen)}
-          className="flex items-center gap-1.5 rounded-full border-2 border-dashed border-border bg-secondary px-3 py-1.5 font-mono text-xs text-muted-foreground transition-all hover:border-primary hover:text-foreground"
+          className={`flex items-center gap-1.5 rounded-full border-2 border-dashed px-3 py-1.5 font-mono text-xs transition-all ${
+            editingActivity
+              ? "border-primary bg-primary/10 text-primary"
+              : "border-border bg-secondary text-muted-foreground hover:border-primary hover:text-foreground"
+          }`}
         >
           <Plus className="h-3 w-3" />
-          custom
+          {editingActivity ? "editing" : "custom"}
         </button>
 
         {isOpen && (
           <div className="absolute right-0 top-full z-50 mt-2 w-72 rounded-2xl bg-card p-4 shadow-lg border border-border">
             <form onSubmit={handleSubmit} className="space-y-3">
-              <input
-                type="text"
-                value={label}
-                onChange={(e) => setLabel(e.target.value)}
-                placeholder="Activity name..."
-                className="w-full rounded-xl border-2 border-dashed border-border bg-secondary px-3 py-2 font-mono text-sm text-foreground placeholder:text-muted-foreground/50 focus:border-primary focus:outline-none transition-colors"
-                autoFocus
-              />
+              <div>
+                <label className="mb-1 block font-mono text-xs text-muted-foreground">
+                  {editingActivity ? "edit activity" : "new activity"}
+                </label>
+                <input
+                  type="text"
+                  value={label}
+                  onChange={(e) => setLabel(e.target.value)}
+                  placeholder="Activity name..."
+                  className="w-full rounded-xl border-2 border-dashed border-border bg-secondary px-3 py-2 font-mono text-sm text-foreground placeholder:text-muted-foreground/50 focus:border-primary focus:outline-none transition-colors"
+                  autoFocus
+                />
+              </div>
 
               <div className="flex gap-1.5">
                 {presetColors.map((color) => (
@@ -99,7 +141,7 @@ export function CustomBlockCreator({ onAddBlock, compact }: CustomBlockCreatorPr
               <div className="flex gap-2">
                 <button
                   type="button"
-                  onClick={() => setIsOpen(false)}
+                  onClick={handleCancel}
                   className="flex-1 rounded-lg border border-border px-3 py-1.5 font-mono text-xs text-muted-foreground hover:text-foreground transition-colors"
                 >
                   cancel
@@ -109,7 +151,7 @@ export function CustomBlockCreator({ onAddBlock, compact }: CustomBlockCreatorPr
                   disabled={!label.trim()}
                   className="flex-1 rounded-lg bg-primary px-3 py-1.5 font-mono text-xs text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
                 >
-                  add
+                  {editingActivity ? "update" : "add"}
                 </button>
               </div>
             </form>

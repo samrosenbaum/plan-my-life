@@ -21,4 +21,4 @@ export interface DaySchedule {
   slots: ScheduleSlot[]
 }
 
-export type ViewMode = "day" | "week" | "month" | "year"
+export type ViewMode = "essentials" | "day" | "week" | "month" | "year"
