@@ -5,20 +5,37 @@ import type React from "react"
 import { useState } from "react"
 import type { ActivityBlock } from "@/lib/types"
 import { ActivityIcon } from "./activity-icon"
+import { Pencil, Trash2 } from "lucide-react"
 
 interface ActivityPaletteProps {
   activities: ActivityBlock[]
   onDragStart: (activity: ActivityBlock) => void
   onDragEnd: () => void
   inline?: boolean // Added inline prop for horizontal layout
+  onEditActivity?: (activity: ActivityBlock) => void
+  onDeleteActivity?: (activityId: string) => void
 }
 
-export function ActivityPalette({ activities, onDragStart, onDragEnd, inline }: ActivityPaletteProps) {
+export function ActivityPalette({
+  activities,
+  onDragStart,
+  onDragEnd,
+  inline,
+  onEditActivity,
+  onDeleteActivity
+}: ActivityPaletteProps) {
   if (inline) {
     return (
       <div className="flex flex-wrap gap-3">
         {activities.map((activity) => (
-          <DraggableActivity key={activity.id} activity={activity} onDragStart={onDragStart} onDragEnd={onDragEnd} />
+          <DraggableActivity
+            key={activity.id}
+            activity={activity}
+            onDragStart={onDragStart}
+            onDragEnd={onDragEnd}
+            onEdit={onEditActivity}
+            onDelete={onDeleteActivity}
+          />
         ))}
       </div>
     )
@@ -33,7 +50,14 @@ export function ActivityPalette({ activities, onDragStart, onDragEnd, inline }: 
 
       <div className="grid grid-cols-2 gap-3">
         {activities.map((activity) => (
-          <DraggableActivity key={activity.id} activity={activity} onDragStart={onDragStart} onDragEnd={onDragEnd} />
+          <DraggableActivity
+            key={activity.id}
+            activity={activity}
+            onDragStart={onDragStart}
+            onDragEnd={onDragEnd}
+            onEdit={onEditActivity}
+            onDelete={onDeleteActivity}
+          />
         ))}
       </div>
     </div>
@@ -44,10 +68,13 @@ interface DraggableActivityProps {
   activity: ActivityBlock
   onDragStart: (activity: ActivityBlock) => void
   onDragEnd: () => void
+  onEdit?: (activity: ActivityBlock) => void
+  onDelete?: (activityId: string) => void
 }
 
-function DraggableActivity({ activity, onDragStart, onDragEnd }: DraggableActivityProps) {
+function DraggableActivity({ activity, onDragStart, onDragEnd, onEdit, onDelete }: DraggableActivityProps) {
   const [isDragging, setIsDragging] = useState(false)
+  const isCustom = activity.id.startsWith("custom-")
 
   const handleDragStart = (e: React.DragEvent) => {
     setIsDragging(true)
@@ -66,14 +93,40 @@ function DraggableActivity({ activity, onDragStart, onDragEnd }: DraggableActivi
     onDragEnd()
   }
 
+  const handleTouchStart = (e: React.TouchEvent) => {
+    setIsDragging(true)
+    onDragStart(activity)
+  }
+
+  const handleTouchEnd = () => {
+    setIsDragging(false)
+    onDragEnd()
+  }
+
+  const handleEdit = (e: React.MouseEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    if (onEdit) onEdit(activity)
+  }
+
+  const handleDelete = (e: React.MouseEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    if (onDelete && confirm(`Delete "${activity.label}"?`)) {
+      onDelete(activity.id)
+    }
+  }
+
   return (
     <div
       draggable
       onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
+      onTouchStart={handleTouchStart}
+      onTouchEnd={handleTouchEnd}
       className={`
-        group flex cursor-grab items-center gap-2 rounded-2xl border-2 border-dashed
-        bg-secondary px-3 py-2.5 transition-all duration-200 ease-out
+        group relative flex cursor-grab items-center gap-2 rounded-2xl border-2 border-dashed
+        bg-secondary px-3 py-3 min-h-[44px] transition-all duration-200 ease-out
         hover:border-primary hover:bg-secondary/80 hover:shadow-md
         active:cursor-grabbing active:scale-95
         ${isDragging ? "scale-95 opacity-50 border-primary" : "border-border"}
@@ -81,7 +134,30 @@ function DraggableActivity({ activity, onDragStart, onDragEnd }: DraggableActivi
       style={{ borderColor: isDragging ? activity.color : undefined }}
     >
       <ActivityIcon icon={activity.icon} color={activity.color} className="h-5 w-5 shrink-0" />
-      <span className="truncate font-mono text-xs text-foreground">{activity.label}</span>
+      <span className="truncate font-mono text-xs text-foreground flex-1">{activity.label}</span>
+
+      {isCustom && (onEdit || onDelete) && (
+        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+          {onEdit && (
+            <button
+              onClick={handleEdit}
+              className="min-w-[32px] min-h-[32px] p-1 rounded-lg hover:bg-primary/10 transition-colors"
+              title="Edit activity"
+            >
+              <Pencil className="h-3 w-3 text-muted-foreground hover:text-primary" />
+            </button>
+          )}
+          {onDelete && (
+            <button
+              onClick={handleDelete}
+              className="min-w-[32px] min-h-[32px] p-1 rounded-lg hover:bg-destructive/10 transition-colors"
+              title="Delete activity"
+            >
+              <Trash2 className="h-3 w-3 text-muted-foreground hover:text-destructive" />
+            </button>
+          )}
+        </div>
+      )}
     </div>
   )
 }

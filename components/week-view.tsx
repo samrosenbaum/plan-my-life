@@ -2,7 +2,7 @@
 
 import type React from "react"
 import { useState, useRef, useEffect, useCallback } from "react"
-import type { DaySchedule, ActivityBlock, TimeSlot } from "@/lib/types"
+import type { DaySchedule, ActivityBlock, ScheduleSlot } from "@/lib/types"
 import { ActivityIcon } from "./activity-icon"
 import { ChevronLeft, ChevronRight, Plus, GripVertical } from "lucide-react"
 
@@ -179,7 +179,7 @@ export function WeekView({
     }
   }, [])
 
-  const getSlotForDate = (dateKey: string, slotIndex: number): TimeSlot | null => {
+  const getSlotForDate = (dateKey: string, slotIndex: number): ScheduleSlot | null => {
     const schedule = schedulesByDate[dateKey]
     if (!schedule) return null
     return schedule.slots[slotIndex] || null

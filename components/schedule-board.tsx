@@ -1,10 +1,11 @@
 "use client"
 
 import type React from "react"
-import { useState, useRef, useEffect, useCallback } from "react"
+import { useState, useRef, useEffect, useCallback, memo } from "react"
 import type { ActivityBlock, ScheduleSlot } from "@/lib/types"
 import { ActivityIcon } from "./activity-icon"
 import { X, Check, ChevronLeft, ChevronRight, GripVertical } from "lucide-react"
+import { useSwipe } from "@/lib/use-swipe"
 
 interface ScheduleBoardProps {
   schedule: ScheduleSlot[]
@@ -33,6 +34,7 @@ export function ScheduleBoard({
   const isPast = selectedDate < new Date(currentTime.toDateString())
   const scrollContainerRef = useRef<HTMLDivElement>(null)
   const scrollIntervalRef = useRef<NodeJS.Timeout | null>(null)
+  const swipeContainerRef = useRef<HTMLDivElement>(null)
 
   const goToPreviousDay = () => {
     const newDate = new Date(selectedDate)
@@ -102,15 +104,22 @@ export function ScheduleBoard({
     }
   }, [])
 
+  // Swipe navigation
+  useSwipe(swipeContainerRef, {
+    onSwipeLeft: goToNextDay,
+    onSwipeRight: goToPreviousDay,
+    threshold: 75,
+  })
+
   // Filter out continuation slots for rendering
   const visibleSchedule = schedule.filter((slot) => !slot.isContinuation)
 
   return (
-    <div className="rounded-3xl bg-card p-5 shadow-sm">
+    <div ref={swipeContainerRef} className="rounded-3xl bg-card p-5 shadow-sm">
       <div className="mb-4 flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <button onClick={goToPreviousDay} className="rounded-full p-1.5 hover:bg-secondary transition-colors">
-            <ChevronLeft className="h-4 w-4 text-muted-foreground" />
+          <button onClick={goToPreviousDay} className="rounded-full min-w-[44px] min-h-[44px] p-3 hover:bg-secondary transition-colors flex items-center justify-center">
+            <ChevronLeft className="h-5 w-5 text-muted-foreground" />
           </button>
           <div className="flex items-center gap-2">
             <SketchClockIcon className="h-5 w-5 text-primary" />
@@ -118,20 +127,20 @@ export function ScheduleBoard({
               {isToday ? "today" : selectedDate.toLocaleDateString("en-US", { weekday: "long" }).toLowerCase()}
             </h2>
           </div>
-          <button onClick={goToNextDay} className="rounded-full p-1.5 hover:bg-secondary transition-colors">
-            <ChevronRight className="h-4 w-4 text-muted-foreground" />
+          <button onClick={goToNextDay} className="rounded-full min-w-[44px] min-h-[44px] p-3 hover:bg-secondary transition-colors flex items-center justify-center">
+            <ChevronRight className="h-5 w-5 text-muted-foreground" />
           </button>
         </div>
         <div className="flex items-center gap-2">
           {!isToday && (
             <button
               onClick={goToToday}
-              className="rounded-full bg-primary/10 px-3 py-1 font-mono text-xs text-primary hover:bg-primary/20 transition-colors"
+              className="rounded-full bg-primary/10 min-h-[44px] px-4 py-2 font-mono text-xs text-primary hover:bg-primary/20 transition-colors"
             >
               today
             </button>
           )}
-          <span className="font-mono text-xs text-muted-foreground">
+          <span className="font-mono text-xs text-muted-foreground hidden sm:inline">
             {selectedDate.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
           </span>
         </div>
@@ -221,7 +230,7 @@ interface TimeSlotProps {
   slotPassed: boolean
 }
 
-function TimeSlot({
+const TimeSlot = memo(function TimeSlot({
   slot,
   slotIndex,
   totalSlots,
@@ -254,6 +263,27 @@ function TimeSlot({
     e.preventDefault()
     setIsDragOver(false)
     onDrop(slot.id)
+  }
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (!isDropTarget) return
+    const touch = e.touches[0]
+    const element = document.elementFromPoint(touch.clientX, touch.clientY)
+    if (element && slotRef.current?.contains(element)) {
+      setIsDragOver(true)
+    } else {
+      setIsDragOver(false)
+    }
+  }
+
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    if (!isDropTarget) return
+    const touch = e.changedTouches[0]
+    const element = document.elementFromPoint(touch.clientX, touch.clientY)
+    if (element && slotRef.current?.contains(element)) {
+      onDrop(slot.id)
+    }
+    setIsDragOver(false)
   }
 
   const handleResizeStart = (e: React.MouseEvent) => {
@@ -299,6 +329,8 @@ function TimeSlot({
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
       className={`group relative flex items-start gap-4 rounded-2xl border-2 border-dashed p-3 transition-all duration-200 ease-out text-popover ${isCurrentSlot ? "ring-2 ring-primary ring-offset-2" : ""}
         ${
           slot.activity
@@ -339,16 +371,16 @@ function TimeSlot({
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => onToggleComplete(slot.id)}
-                  className={`flex h-5 w-5 items-center justify-center rounded-md border-2 transition-all duration-200 ${
+                  className={`flex h-6 w-6 min-w-[44px] min-h-[44px] items-center justify-center rounded-md border-2 transition-all duration-200 ${
                     slot.completed ? "border-green-500 bg-green-500 text-white" : "border-border hover:border-primary"
                   }`}
                 >
-                  {slot.completed && <Check className="h-3 w-3" />}
+                  {slot.completed && <Check className="h-5 w-5" />}
                 </button>
                 <ActivityIcon
                   icon={slot.activity.icon}
                   color={slot.completed ? "#22c55e" : slot.activity.color}
-                  className="h-4 w-4"
+                  className="h-5 w-5"
                 />
                 <span
                   className={`font-mono text-xs ${slot.completed ? "line-through text-muted-foreground" : "text-foreground"}`}
@@ -358,19 +390,20 @@ function TimeSlot({
               </div>
               <button
                 onClick={() => onRemove(slot.id)}
-                className="opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded-full hover:bg-destructive/10"
+                className="opacity-0 group-hover:opacity-100 md:opacity-100 transition-opacity min-w-[44px] min-h-[44px] p-2 rounded-full hover:bg-destructive/10"
               >
-                <X className="h-3 w-3 text-muted-foreground hover:text-destructive" />
+                <X className="h-4 w-4 text-muted-foreground hover:text-destructive" />
               </button>
             </div>
 
             {onResize && (
               <div
                 onMouseDown={handleResizeStart}
-                className="absolute bottom-0 left-0 right-0 h-3 cursor-ns-resize flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                onTouchStart={(e) => handleResizeStart(e as any)}
+                className="absolute bottom-0 left-0 right-0 h-8 cursor-ns-resize flex items-center justify-center opacity-0 group-hover:opacity-100 md:opacity-100 transition-opacity touch-none"
               >
-                <div className="flex items-center gap-0.5">
-                  <GripVertical className="h-3 w-3 text-muted-foreground rotate-90" />
+                <div className="flex items-center gap-0.5 bg-muted/50 rounded-full px-3 py-1">
+                  <GripVertical className="h-4 w-4 text-muted-foreground rotate-90" />
                 </div>
               </div>
             )}
@@ -387,7 +420,7 @@ function TimeSlot({
       </div>
     </div>
   )
-}
+})
 
 function SketchClockIcon({ className }: { className?: string }) {
   return (
