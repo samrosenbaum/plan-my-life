@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useMemo } from "react"
+import { useState, useMemo, useEffect } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { SketchyCard } from "./sketchy-card"
 import { SketchyPieChart } from "./sketchy-pie-chart"
@@ -13,8 +13,11 @@ import { SpendingStats } from "./spending-stats"
 import { TransactionModal } from "./transaction-modal"
 import { MerchantSearch } from "./merchant-search"
 import { SpendingChat } from "./spending-chat"
+import { BudgetManager } from "./budget-manager"
+import { SpendingAlerts } from "./spending-alerts"
 import { chaseReserveData, amazonCardData, amexData, checkingData, dataYear } from "@/lib/spending-data"
 import { useCredits, getTransactionKey } from "@/lib/credits-context"
+import { useBudget } from "@/lib/budget-context"
 
 export type CardType = "all" | "chase-sapphire" | "amazon" | "amex" | "checking"
 
@@ -28,6 +31,7 @@ export default function SpendingDashboard() {
     null,
   )
   const { getAdjustedAmount, getCategory } = useCredits()
+  const { checkBudgets, detectAnomalies } = useBudget()
 
   const allCardData = useMemo(() => {
     let data: typeof chaseReserveData = []
@@ -109,6 +113,19 @@ export default function SpendingDashboard() {
     return filteredData.filter((item) => item.amount < 0).length
   }, [filteredData])
 
+  // Autonomous budget monitoring and anomaly detection
+  useEffect(() => {
+    // Check budgets against current spending
+    const categorySpending: Record<string, number> = {}
+    categoryData.forEach((cat) => {
+      categorySpending[cat.name] = cat.value
+    })
+    checkBudgets(categorySpending)
+
+    // Detect spending anomalies and recurring transactions
+    detectAnomalies(filteredData)
+  }, [categoryData, filteredData, checkBudgets, detectAnomalies])
+
   const modalTransactions = useMemo(() => {
     if (!modalContext) return []
     if (modalContext.type === "category") {
@@ -189,6 +206,16 @@ export default function SpendingDashboard() {
           transactionCount={purchaseCount}
           avgTransaction={purchaseCount > 0 ? totalSpending / purchaseCount : 0}
         />
+
+        {/* Autonomous Insights & Alerts */}
+        <div className="mt-8">
+          <SpendingAlerts />
+        </div>
+
+        {/* Budget Tracker */}
+        <div className="mt-8">
+          <BudgetManager categorySpending={Object.fromEntries(categoryData.map((c) => [c.name, c.value]))} />
+        </div>
 
         {/* Charts Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-8">

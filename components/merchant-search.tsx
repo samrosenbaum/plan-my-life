@@ -22,11 +22,19 @@ interface MerchantSearchProps {
 
 function normalizeMerchant(description: string): string {
   return description
+    .toUpperCase() // Normalize case
     .replace(/\*.*$/, "") // Remove everything after *
-    .replace(/\d{5,}/g, "") // Remove long number sequences
+    .replace(/\d{5,}/g, "") // Remove long number sequences (order IDs, etc.)
+    .replace(/\s+#\d+/g, "") // Remove transaction numbers like " #12345"
+    .replace(/\s+-\s+.*/g, "") // Remove everything after " - "
+    .replace(/\s+\d{1,2}\/\d{1,2}$/g, "") // Remove trailing dates like " 12/25"
+    .replace(/TST\*?\s*/g, "") // Remove "TST*" or "TST" prefix
+    .replace(/SP\s+/g, "") // Remove "SP " prefix
+    .replace(/DD\s+\*/g, "") // Remove "DD *" prefix (DoorDash)
+    .replace(/AMZN\s+MKTP\s+US\*/gi, "AMAZON ") // Normalize Amazon Marketplace
     .replace(/\s+/g, " ") // Collapse whitespace
     .trim()
-    .slice(0, 30)
+    .slice(0, 40) // Allow slightly longer names
 }
 
 export function MerchantSearch({ data, onMerchantClick }: MerchantSearchProps) {
@@ -51,9 +59,12 @@ export function MerchantSearch({ data, onMerchantClick }: MerchantSearchProps) {
           merchantMap[normalizedName] = { total: 0, count: 0, transactions: [] }
         }
 
+        // Correctly calculate net spending: purchases (negative) - returns (positive)
         if (adjustedAmount < 0) {
+          // Purchase: add absolute value to spending
           merchantMap[normalizedName].total += Math.abs(adjustedAmount)
         } else if (adjustedAmount > 0) {
+          // Return/credit: subtract from spending
           merchantMap[normalizedName].total -= adjustedAmount
         }
 
@@ -63,14 +74,14 @@ export function MerchantSearch({ data, onMerchantClick }: MerchantSearchProps) {
     })
 
     return Object.entries(merchantMap)
-      .filter(([name, data]) => name.length >= 3 && data.total > 0) // Only show positive net spending
+      .filter(([name, data]) => name.length >= 3) // Show all merchants with valid names
       .map(([name, data]) => ({
         name,
         total: data.total,
         count: data.count,
         transactions: data.transactions,
       }))
-      .sort((a, b) => b.total - a.total)
+      .sort((a, b) => Math.abs(b.total) - Math.abs(a.total)) // Sort by absolute spending (highest activity first)
       .slice(0, 10)
   }, [query, data, getAdjustedAmount])
 
