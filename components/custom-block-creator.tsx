@@ -3,8 +3,8 @@
 import type React from "react"
 
 import { useState, useEffect } from "react"
-import type { ActivityBlock } from "@/lib/types"
-import { Plus } from "lucide-react"
+import type { ActivityBlock, SubActivity } from "@/lib/types"
+import { Plus, X } from "lucide-react"
 import { ActivityIcon } from "./activity-icon"
 
 interface CustomBlockCreatorProps {
@@ -32,6 +32,10 @@ export function CustomBlockCreator({ onAddBlock, onUpdateBlock, editingActivity,
   const [label, setLabel] = useState("")
   const [selectedColor, setSelectedColor] = useState(presetColors[0])
   const [selectedIcon, setSelectedIcon] = useState(presetIcons[0])
+  const [isRoutine, setIsRoutine] = useState(false)
+  const [subActivities, setSubActivities] = useState<SubActivity[]>([])
+  const [newSubLabel, setNewSubLabel] = useState("")
+  const [newSubDuration, setNewSubDuration] = useState(15)
 
   // Populate form when editing
   useEffect(() => {
@@ -39,6 +43,8 @@ export function CustomBlockCreator({ onAddBlock, onUpdateBlock, editingActivity,
       setLabel(editingActivity.label)
       setSelectedColor(editingActivity.color)
       setSelectedIcon(editingActivity.icon)
+      setIsRoutine(editingActivity.isRoutine || false)
+      setSubActivities(editingActivity.subActivities || [])
       setIsOpen(true)
     }
   }, [editingActivity])
@@ -47,6 +53,8 @@ export function CustomBlockCreator({ onAddBlock, onUpdateBlock, editingActivity,
     e.preventDefault()
     if (!label.trim()) return
 
+    const totalMinutes = isRoutine ? subActivities.reduce((sum, s) => sum + s.durationMinutes, 0) : undefined
+
     if (editingActivity && onUpdateBlock) {
       // Update existing activity
       const updatedBlock: ActivityBlock = {
@@ -54,6 +62,9 @@ export function CustomBlockCreator({ onAddBlock, onUpdateBlock, editingActivity,
         label: label.trim(),
         icon: selectedIcon,
         color: selectedColor,
+        isRoutine,
+        subActivities: isRoutine ? subActivities : undefined,
+        totalMinutes,
       }
       onUpdateBlock(updatedBlock)
     } else {
@@ -63,13 +74,21 @@ export function CustomBlockCreator({ onAddBlock, onUpdateBlock, editingActivity,
         label: label.trim(),
         icon: selectedIcon,
         color: selectedColor,
+        isRoutine,
+        subActivities: isRoutine ? subActivities : undefined,
+        totalMinutes,
       }
       onAddBlock(newBlock)
     }
 
+    // Reset form
     setLabel("")
     setSelectedColor(presetColors[0])
     setSelectedIcon(presetIcons[0])
+    setIsRoutine(false)
+    setSubActivities([])
+    setNewSubLabel("")
+    setNewSubDuration(15)
     setIsOpen(false)
   }
 
@@ -77,8 +96,29 @@ export function CustomBlockCreator({ onAddBlock, onUpdateBlock, editingActivity,
     setLabel("")
     setSelectedColor(presetColors[0])
     setSelectedIcon(presetIcons[0])
+    setIsRoutine(false)
+    setSubActivities([])
+    setNewSubLabel("")
+    setNewSubDuration(15)
     setIsOpen(false)
     if (onCancelEdit) onCancelEdit()
+  }
+
+  const handleAddSubActivity = () => {
+    if (!newSubLabel.trim()) return
+    const newSub: SubActivity = {
+      id: `sub-${Date.now()}`,
+      label: newSubLabel.trim(),
+      durationMinutes: newSubDuration,
+      order: subActivities.length,
+    }
+    setSubActivities([...subActivities, newSub])
+    setNewSubLabel("")
+    setNewSubDuration(15)
+  }
+
+  const handleRemoveSubActivity = (id: string) => {
+    setSubActivities(subActivities.filter((s) => s.id !== id))
   }
 
   if (compact) {
@@ -137,6 +177,69 @@ export function CustomBlockCreator({ onAddBlock, onUpdateBlock, editingActivity,
                   </button>
                 ))}
               </div>
+
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={isRoutine}
+                  onChange={(e) => setIsRoutine(e.target.checked)}
+                  className="h-4 w-4 rounded border-2 border-border"
+                />
+                <span className="font-mono text-xs text-foreground">make this a routine</span>
+              </label>
+
+              {isRoutine && (
+                <div className="space-y-2 rounded-xl border-2 border-dashed border-border bg-secondary/30 p-3">
+                  <p className="font-mono text-xs text-muted-foreground">breakdown ({subActivities.reduce((sum, s) => sum + s.durationMinutes, 0)}m total)</p>
+
+                  {subActivities.map((sub) => (
+                    <div key={sub.id} className="flex items-center gap-2 text-xs">
+                      <span className="font-mono flex-1 text-foreground">{sub.label}</span>
+                      <span className="font-mono text-muted-foreground">{sub.durationMinutes}m</span>
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveSubActivity(sub.id)}
+                        className="p-1 hover:text-destructive"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </div>
+                  ))}
+
+                  <div className="flex gap-1">
+                    <input
+                      type="text"
+                      value={newSubLabel}
+                      onChange={(e) => setNewSubLabel(e.target.value)}
+                      placeholder="e.g., Pushups"
+                      className="flex-1 rounded-lg border border-border bg-card px-2 py-1 font-mono text-xs"
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          e.preventDefault()
+                          handleAddSubActivity()
+                        }
+                      }}
+                    />
+                    <select
+                      value={newSubDuration}
+                      onChange={(e) => setNewSubDuration(Number(e.target.value))}
+                      className="rounded-lg border border-border bg-card px-2 py-1 font-mono text-xs"
+                    >
+                      <option value={5}>5m</option>
+                      <option value={10}>10m</option>
+                      <option value={15}>15m</option>
+                      <option value={30}>30m</option>
+                    </select>
+                    <button
+                      type="button"
+                      onClick={handleAddSubActivity}
+                      className="p-1 rounded-lg bg-primary/10 text-primary hover:bg-primary/20"
+                    >
+                      <Plus className="h-4 w-4" />
+                    </button>
+                  </div>
+                </div>
+              )}
 
               <div className="flex gap-2">
                 <button

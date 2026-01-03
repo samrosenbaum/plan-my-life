@@ -134,7 +134,14 @@ function DraggableActivity({ activity, onDragStart, onDragEnd, onEdit, onDelete 
       style={{ borderColor: isDragging ? activity.color : undefined }}
     >
       <ActivityIcon icon={activity.icon} color={activity.color} className="h-5 w-5 shrink-0" />
-      <span className="truncate font-mono text-xs text-foreground flex-1">{activity.label}</span>
+      <div className="flex-1 flex items-center gap-1 min-w-0">
+        <span className="truncate font-mono text-xs text-foreground">{activity.label}</span>
+        {activity.isRoutine && (
+          <span className="shrink-0 rounded-full bg-primary/10 px-1.5 py-0.5 font-mono text-[10px] text-primary">
+            routine
+          </span>
+        )}
+      </div>
 
       {isCustom && (onEdit || onDelete) && (
         <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">

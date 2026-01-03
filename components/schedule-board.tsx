@@ -2,10 +2,11 @@
 
 import type React from "react"
 import { useState, useRef, useEffect, useCallback, memo } from "react"
-import type { ActivityBlock, ScheduleSlot } from "@/lib/types"
+import type { ActivityBlock, ScheduleSlot, SubActivity } from "@/lib/types"
 import { ActivityIcon } from "./activity-icon"
-import { X, Check, ChevronLeft, ChevronRight, GripVertical } from "lucide-react"
+import { X, Check, ChevronLeft, ChevronRight, GripVertical, ChevronDown, ChevronUp } from "lucide-react"
 import { useSwipe } from "@/lib/use-swipe"
+import { RoutineEditor } from "./routine-editor"
 
 interface ScheduleBoardProps {
   schedule: ScheduleSlot[]
@@ -246,9 +247,12 @@ const TimeSlot = memo(function TimeSlot({
   const [isResizing, setIsResizing] = useState(false)
   const [resizeStartY, setResizeStartY] = useState(0)
   const [currentDuration, setCurrentDuration] = useState(slot.activity?.duration || 1)
+  const [isExpanded, setIsExpanded] = useState(slot.isExpanded || false)
+  const [subCompletions, setSubCompletions] = useState<Record<string, boolean>>(slot.subActivityCompletions || {})
   const slotRef = useRef<HTMLDivElement>(null)
 
   const duration = slot.activity?.duration || 1
+  const isRoutine = slot.activity?.isRoutine || false
 
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault()
@@ -284,6 +288,18 @@ const TimeSlot = memo(function TimeSlot({
       onDrop(slot.id)
     }
     setIsDragOver(false)
+  }
+
+  const handleToggleSubActivity = (subActivityId: string) => {
+    setSubCompletions((prev) => ({
+      ...prev,
+      [subActivityId]: !prev[subActivityId],
+    }))
+  }
+
+  const handleUpdateSubActivities = (newSubActivities: SubActivity[]) => {
+    // For now, this is a placeholder - in full implementation would update in parent
+    console.log("Update sub-activities:", newSubActivities)
   }
 
   const handleResizeStart = (e: React.MouseEvent) => {
@@ -387,6 +403,18 @@ const TimeSlot = memo(function TimeSlot({
                 >
                   {slot.activity.label}
                 </span>
+                {isRoutine && (
+                  <button
+                    onClick={() => setIsExpanded(!isExpanded)}
+                    className="ml-2 p-1 hover:bg-secondary rounded transition-colors"
+                  >
+                    {isExpanded ? (
+                      <ChevronUp className="h-4 w-4 text-muted-foreground" />
+                    ) : (
+                      <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                    )}
+                  </button>
+                )}
               </div>
               <button
                 onClick={() => onRemove(slot.id)}
@@ -395,6 +423,19 @@ const TimeSlot = memo(function TimeSlot({
                 <X className="h-4 w-4 text-muted-foreground hover:text-destructive" />
               </button>
             </div>
+
+            {isRoutine && isExpanded && slot.activity.subActivities && (
+              <div className="mt-3">
+                <RoutineEditor
+                  subActivities={slot.activity.subActivities}
+                  completions={subCompletions}
+                  routineColor={slot.activity.color}
+                  onUpdateSubActivities={handleUpdateSubActivities}
+                  onToggleSubActivity={handleToggleSubActivity}
+                  compact
+                />
+              </div>
+            )}
 
             {onResize && (
               <div

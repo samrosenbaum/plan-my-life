@@ -15,14 +15,46 @@ import { SketchCalendarIcon } from "./sketch-calendar-icon"
 import { useLocalStorage } from "@/lib/use-local-storage"
 
 const defaultActivities: ActivityBlock[] = [
-  { id: "workout-equinox", label: "Workout - Equinox", icon: "barbell", color: "#E15B8C" }, // Pink
-  { id: "workout-fitness-sf", label: "Workout - Fitness SF", icon: "barbell", color: "#E17C5B" }, // Orange
-  { id: "commute-waymo", label: "Commute - Waymo", icon: "car", color: "#5BB8E1" }, // Cyan
-  { id: "commute-bus", label: "Commute - Bus", icon: "bus", color: "#7C5CE0" }, // Purple
-  { id: "clean", label: "Clean", icon: "sparkles", color: "#5BE17C" }, // Green
-  { id: "elliot", label: "Take Elliot Out", icon: "dog", color: "#E1B85B" }, // Yellow
-  { id: "work-focus", label: "Work/Deep Focus", icon: "focus", color: "#5B6EE1" }, // Blue
-  { id: "read-write-build", label: "Read/Write/Build", icon: "create", color: "#8B5CF6" }, // Violet
+  // Routines
+  {
+    id: "morning-routine",
+    label: "Morning Routine",
+    icon: "sun",
+    color: "#E1B85B",
+    isRoutine: true,
+    duration: 1,
+    totalMinutes: 60,
+    subActivities: [
+      { id: "pushups", label: "Pushups", durationMinutes: 5, order: 0 },
+      { id: "journal", label: "Journal", durationMinutes: 10, order: 1 },
+      { id: "coffee-reading", label: "Coffee + Reading", durationMinutes: 30, order: 2 },
+      { id: "shower", label: "Shower", durationMinutes: 15, order: 3 },
+    ],
+  },
+  {
+    id: "evening-routine",
+    label: "Evening Routine",
+    icon: "moon",
+    color: "#7C5CE0",
+    isRoutine: true,
+    duration: 1,
+    totalMinutes: 45,
+    subActivities: [
+      { id: "reflection", label: "Daily Reflection", durationMinutes: 10, order: 0 },
+      { id: "plan-tomorrow", label: "Plan Tomorrow", durationMinutes: 10, order: 1 },
+      { id: "read", label: "Read", durationMinutes: 25, order: 2 },
+    ],
+  },
+
+  // Regular activities
+  { id: "workout-equinox", label: "Workout - Equinox", icon: "barbell", color: "#E15B8C" },
+  { id: "workout-fitness-sf", label: "Workout - Fitness SF", icon: "barbell", color: "#E17C5B" },
+  { id: "commute-waymo", label: "Commute - Waymo", icon: "car", color: "#5BB8E1" },
+  { id: "commute-bus", label: "Commute - Bus", icon: "bus", color: "#7C5CE0" },
+  { id: "clean", label: "Clean", icon: "sparkles", color: "#5BE17C" },
+  { id: "elliot", label: "Take Elliot Out", icon: "dog", color: "#E1B85B" },
+  { id: "work-focus", label: "Work/Deep Focus", icon: "focus", color: "#5B6EE1" },
+  { id: "read-write-build", label: "Read/Write/Build", icon: "create", color: "#8B5CF6" },
 ]
 
 const timeSlots = [
