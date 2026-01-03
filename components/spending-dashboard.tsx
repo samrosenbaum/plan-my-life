@@ -13,7 +13,7 @@ import { SpendingStats } from "./spending-stats"
 import { TransactionModal } from "./transaction-modal"
 import { MerchantSearch } from "./merchant-search"
 import { SpendingChat } from "./spending-chat"
-import { chaseReserveData, amazonCardData, amexData, checkingData } from "@/lib/spending-data"
+import { chaseReserveData, amazonCardData, amexData, checkingData, dataYear } from "@/lib/spending-data"
 import { useCredits, getTransactionKey } from "@/lib/credits-context"
 
 export type CardType = "all" | "chase-sapphire" | "amazon" | "amex" | "checking"
@@ -141,7 +141,7 @@ export default function SpendingDashboard() {
         Nov: "November",
         Dec: "December",
       }
-      return `${monthNames[modalContext.value] || modalContext.value} 2025`
+      return `${monthNames[modalContext.value] || modalContext.value} ${dataYear}`
     }
   }, [modalContext])
 
@@ -166,7 +166,9 @@ export default function SpendingDashboard() {
       <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="text-center mb-8">
-          <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-2 font-sketch">2025 Spending Tracker</h1>
+          <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-2 font-sketch">
+            {dataYear} Spending Tracker
+          </h1>
           <p className="text-muted-foreground text-lg">{"Where tf does my money go"}</p>
         </div>
 
@@ -282,7 +284,7 @@ export default function SpendingDashboard() {
       />
 
       {/* Spending Chat Assistant */}
-      <SpendingChat data={allCardData} onViewTransactions={handleChatViewTransactions} />
+      <SpendingChat data={allCardData} dataYear={dataYear} onViewTransactions={handleChatViewTransactions} />
     </div>
   )
 }

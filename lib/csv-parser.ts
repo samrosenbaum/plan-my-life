@@ -18,6 +18,32 @@ function getMonthFromDate(dateStr: string): string {
   return MONTHS[monthIndex] || "Jan"
 }
 
+function getYearFromDate(dateStr: string): number {
+  const parts = dateStr.split("/")
+  if (parts.length >= 3) {
+    const year = Number.parseInt(parts[2], 10)
+    return isNaN(year) ? new Date().getFullYear() : year
+  }
+  return new Date().getFullYear()
+}
+
+// Detect the year from transaction data
+function detectDataYear(transactions: Transaction[]): number {
+  if (transactions.length === 0) return new Date().getFullYear()
+
+  // Get the most common year from transactions
+  const yearCounts: Record<number, number> = {}
+  transactions.forEach((t) => {
+    const year = getYearFromDate(t.date)
+    yearCounts[year] = (yearCounts[year] || 0) + 1
+  })
+
+  const mostCommonYear = Object.entries(yearCounts)
+    .sort((a, b) => b[1] - a[1])[0]?.[0]
+
+  return mostCommonYear ? Number.parseInt(mostCommonYear, 10) : new Date().getFullYear()
+}
+
 function parseChaseCSV(csv: string, card: "chase-sapphire" | "amazon"): Transaction[] {
   const lines = csv.trim().split("\n")
   const transactions: Transaction[] = []
@@ -103,9 +129,15 @@ export function getAllTransactions(): Transaction[] {
   return [...chaseSapphire, ...amazon, ...amex]
 }
 
-export function getRentTransactions(): Transaction[] {
+export function getDataYear(): number {
+  const allTransactions = getAllTransactions()
+  return detectDataYear(allTransactions)
+}
+
+export function getRentTransactions(year?: number): Transaction[] {
+  const dataYear = year ?? getDataYear()
   return MONTHS.map((month, index) => ({
-    date: `${String(index + 1).padStart(2, "0")}/01/2025`,
+    date: `${String(index + 1).padStart(2, "0")}/01/${dataYear}`,
     description: "Monthly Rent Payment",
     category: "Rent",
     amount: -3335,

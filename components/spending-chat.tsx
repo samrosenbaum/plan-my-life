@@ -31,10 +31,11 @@ interface Message {
 
 interface SpendingChatProps {
   data: Transaction[]
+  dataYear: number
   onViewTransactions: (title: string, transactions: Transaction[]) => void
 }
 
-export function SpendingChat({ data, onViewTransactions }: SpendingChatProps) {
+export function SpendingChat({ data, dataYear, onViewTransactions }: SpendingChatProps) {
   const [isOpen, setIsOpen] = useState(false)
   const [messages, setMessages] = useState<Message[]>([
     {
@@ -212,7 +213,7 @@ export function SpendingChat({ data, onViewTransactions }: SpendingChatProps) {
       return {
         id,
         type: "assistant" as const,
-        content: `Your total spending for 2025 is **$${total.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}** across ${adjustedData.length} transactions.`,
+        content: `Your total spending for ${dataYear} is **$${total.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}** across ${adjustedData.length} transactions.`,
         data: { total, count: adjustedData.length },
       }
     }
