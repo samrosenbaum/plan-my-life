@@ -1,4 +1,5 @@
-import { chaseSapphireCSV, amazonCardCSV, amexCSV } from "./raw-csv-data"
+import * as fs from "node:fs"
+import * as path from "node:path"
 
 export interface Transaction {
   date: string
@@ -11,6 +12,18 @@ export interface Transaction {
 }
 
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+
+// Helper function to read CSV files from the data directory
+function readCSVFile(filename: string): string {
+  try {
+    const dataDir = path.join(process.cwd(), "data")
+    const filePath = path.join(dataDir, filename)
+    return fs.readFileSync(filePath, "utf-8")
+  } catch (error) {
+    console.error(`[CSV Parser] Failed to read ${filename}:`, error)
+    return ""
+  }
+}
 
 function getMonthFromDate(dateStr: string): string {
   const parts = dateStr.split("/")
@@ -192,6 +205,10 @@ function parseAmexCSV(csv: string): Transaction[] {
 }
 
 export function getAllTransactions(): Transaction[] {
+  const chaseSapphireCSV = readCSVFile("chase-sapphire.csv")
+  const amazonCardCSV = readCSVFile("amazon.csv")
+  const amexCSV = readCSVFile("amex.csv")
+
   const chaseSapphire = parseChaseCSV(chaseSapphireCSV, "chase-sapphire")
   const amazon = parseChaseCSV(amazonCardCSV, "amazon")
   const amex = parseAmexCSV(amexCSV)
