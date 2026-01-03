@@ -1,9 +1,10 @@
-# Spending visualization
+# Money Tracker
 
 *Automatically synced with your [v0.app](https://v0.app) deployments*
 
 [![Deployed on Vercel](https://img.shields.io/badge/Deployed%20on-Vercel-black?style=for-the-badge&logo=vercel)](https://vercel.com/samrosenbaum/v0-spending-visualization)
 [![Built with v0](https://img.shields.io/badge/Built%20with-v0.app-black?style=for-the-badge)](https://v0.app/chat/lqu2QIpJfFu)
+[![GitHub](https://img.shields.io/badge/GitHub-money--tracker-black?style=for-the-badge&logo=github)](https://github.com/samrosenbaum/money-tracker)
 
 ## Overview
 
