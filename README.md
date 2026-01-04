@@ -43,7 +43,7 @@ A beautiful, interactive spending visualization dashboard that helps you underst
 
 ### Installation
 
-```bash
+\`\`\`bash
 # Clone the repository
 git clone https://github.com/samrosenbaum/money-tracker.git
 cd money-tracker
@@ -53,7 +53,7 @@ npm install
 
 # Start development server
 npm run dev
-```
+\`\`\`
 
 Open [http://localhost:3000](http://localhost:3000) in your browser.
 
@@ -64,12 +64,12 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
    - **Amex**: Download as CSV
 
 2. Place CSV files in the `data/` directory:
-   ```
+   \`\`\`
    data/
    ├── chase-sapphire.csv
    ├── amazon.csv
    └── amex.csv
-   ```
+   \`\`\`
 
 3. Ensure CSV formats match expected headers (see `data/README.md` for details)
 
@@ -77,7 +77,7 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 
 ## 📁 Project Structure
 
-```
+\`\`\`
 money-tracker/
 ├── app/                      # Next.js app directory
 │   ├── layout.tsx           # Root layout
@@ -98,13 +98,13 @@ money-tracker/
 │   ├── amex.csv
 │   └── README.md            # CSV format documentation
 └── vitest.config.ts         # Test configuration
-```
+\`\`\`
 
 ## 🧪 Testing
 
 This project includes comprehensive unit tests for all critical calculation logic.
 
-```bash
+\`\`\`bash
 # Run tests once
 npm test
 
@@ -113,7 +113,7 @@ npm run test:watch
 
 # Run tests with coverage report
 npm run test:coverage
-```
+\`\`\`
 
 ### Test Coverage
 
@@ -130,7 +130,7 @@ See `lib/__tests__/README.md` for detailed test documentation.
 
 ### Available Scripts
 
-```bash
+\`\`\`bash
 npm run dev          # Start development server
 npm run build        # Build for production
 npm start            # Start production server
@@ -138,7 +138,7 @@ npm run lint         # Run ESLint
 npm test             # Run unit tests
 npm run test:watch   # Run tests in watch mode
 npm run test:coverage # Run tests with coverage
-```
+\`\`\`
 
 ### TypeScript Configuration
 
@@ -193,20 +193,20 @@ This project uses **strict mode** with additional safety options:
 ## 📊 CSV Format Reference
 
 ### Chase Cards Format
-```csv
+\`\`\`csv
 Transaction Date,Post Date,Description,Category,Type,Amount,Memo
 12/15/2025,12/16/2025,WHOLE FOODS,Groceries,Sale,-50.00,
 12/14/2025,12/15/2025,REFUND,Shopping,Return,30.00,
-```
+\`\`\`
 
 **Note**: Negative amounts = purchases, positive amounts = returns
 
 ### Amex Format
-```csv
+\`\`\`csv
 Date,Description,Amount,Category
 12/15/2025,NETFLIX,15.99,Entertainment
 12/14/2025,REFUND,-10.00,Shopping
-```
+\`\`\`
 
 **Note**: Positive amounts = purchases, negative amounts = credits (opposite of Chase)
 
@@ -259,10 +259,10 @@ This project is private and proprietary.
 ## 🆘 Troubleshooting
 
 ### "Cannot find module" errors
-```bash
+\`\`\`bash
 rm -rf node_modules package-lock.json
 npm install
-```
+\`\`\`
 
 ### CSV not loading
 - Check file is in `data/` directory
@@ -270,18 +270,18 @@ npm install
 - Check console for parsing errors
 
 ### Tests failing
-```bash
+\`\`\`bash
 # Clear cache and re-run
 npm run test -- --clearCache
 npm test
-```
+\`\`\`
 
 ### Type errors after update
-```bash
+\`\`\`bash
 # Regenerate type definitions
 rm -rf .next
 npm run dev
-```
+\`\`\`
 
 ---
 

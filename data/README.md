@@ -7,10 +7,10 @@ This directory contains transaction data from various credit cards and bank acco
 ### Chase Cards (chase-sapphire.csv, amazon.csv)
 
 Format:
-```csv
+\`\`\`csv
 Transaction Date,Post Date,Description,Category,Type,Amount,Memo
 MM/DD/YYYY,MM/DD/YYYY,Merchant Name,Category,Sale/Return,Amount,
-```
+\`\`\`
 
 Notes:
 - **Amount**: Negative values are purchases, positive values are returns
@@ -19,10 +19,10 @@ Notes:
 ### Amex Card (amex.csv)
 
 Format:
-```csv
+\`\`\`csv
 Date,Description,Amount,Category
 MM/DD/YYYY,Merchant Name,Amount,Category
-```
+\`\`\`
 
 Notes:
 - **Amount**: Positive values are purchases, negative values are credits/returns

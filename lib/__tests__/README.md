@@ -4,7 +4,7 @@ This directory contains unit tests for the money-tracker application's critical 
 
 ## Running Tests
 
-```bash
+\`\`\`bash
 # Run tests once
 npm test
 
@@ -13,7 +13,7 @@ npm run test:watch
 
 # Run tests with coverage report
 npm run test:coverage
-```
+\`\`\`
 
 ## Test Coverage
 
@@ -68,7 +68,7 @@ Comprehensive tests for transaction parsing and calculation logic:
 The original codebase had a **critical bug** where `Math.abs()` was applied to all amounts, causing returns/refunds to be added to spending instead of subtracted. This made spending totals significantly inflated.
 
 **Example of the bug:**
-```typescript
+\`\`\`typescript
 // WRONG (the bug):
 adjustedAmount: Math.abs(getAdjustedAmount(item.amount, key))
 // Result: Returns add to spending instead of subtracting
@@ -76,7 +76,7 @@ adjustedAmount: Math.abs(getAdjustedAmount(item.amount, key))
 // CORRECT (the fix):
 adjustedAmount: getAdjustedAmount(item.amount, key)
 // Result: Returns properly subtract from spending
-```
+\`\`\`
 
 These tests ensure that:
 1. The bug doesn't regress

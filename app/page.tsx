@@ -1,13 +1,11 @@
-import SpendingDashboard from "@/components/spending-dashboard"
-import { CreditsProvider } from "@/lib/credits-context"
-import { ErrorBoundary } from "@/components/error-boundary"
+import { InstallPrompt } from "@/components/install-prompt"
+import { DayOrganizer } from "@/components/day-organizer"
 
 export default function Home() {
   return (
-    <ErrorBoundary>
-      <CreditsProvider>
-        <SpendingDashboard />
-      </CreditsProvider>
-    </ErrorBoundary>
+    <>
+      <InstallPrompt />
+      <DayOrganizer />
+    </>
   )
 }
