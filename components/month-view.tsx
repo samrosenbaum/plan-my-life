@@ -77,6 +77,21 @@ export function MonthView({
           const stats = getCompletionStats(dateKey)
           const isToday = date.toDateString() === today
           const hasActivities = stats.total > 0
+          const isPast = date < new Date(today)
+
+          // Color logic:
+          // - Green: 100% complete
+          // - Blue: 50%+ complete
+          // - Yellow: scheduled + (future OR some progress)
+          // - Red: past + 0% complete
+          const getColor = () => {
+            if (!hasActivities) return "hsl(var(--secondary) / 0.3)"
+            if (stats.ratio === 1) return "#22c55e" // Green - complete
+            if (stats.ratio >= 0.5) return "#5B6EE1" // Blue - good progress
+            if (!isPast) return "#eab308" // Yellow - future, not yet happened
+            if (stats.ratio > 0) return "#eab308" // Yellow - past but some progress
+            return "#ef4444" // Red - past with 0% done
+          }
 
           return (
             <button
@@ -87,17 +102,7 @@ export function MonthView({
                 transition-all duration-200 hover:scale-105
                 ${isToday ? "ring-2 ring-primary ring-offset-1" : ""}
               `}
-              style={{
-                backgroundColor: hasActivities
-                  ? stats.ratio === 1
-                    ? "#22c55e"
-                    : stats.ratio >= 0.5
-                      ? "#5B6EE1"
-                      : stats.ratio > 0
-                        ? "#eab308"
-                        : "#ef4444"
-                  : "hsl(var(--secondary) / 0.3)",
-              }}
+              style={{ backgroundColor: getColor() }}
             >
               <span className={`font-mono text-sm ${hasActivities ? "text-white" : "text-foreground"}`}>{i + 1}</span>
             </button>
@@ -106,18 +111,18 @@ export function MonthView({
       </div>
 
       {/* Legend */}
-      <div className="mt-6 flex items-center justify-center gap-4">
+      <div className="mt-6 flex flex-wrap items-center justify-center gap-4">
         <div className="flex items-center gap-2">
           <div className="h-3 w-3 rounded bg-green-500" />
-          <span className="font-mono text-xs text-muted-foreground">done</span>
+          <span className="font-mono text-xs text-muted-foreground">complete</span>
         </div>
         <div className="flex items-center gap-2">
           <div className="h-3 w-3 rounded bg-primary" />
-          <span className="font-mono text-xs text-muted-foreground">good</span>
+          <span className="font-mono text-xs text-muted-foreground">50%+</span>
         </div>
         <div className="flex items-center gap-2">
           <div className="h-3 w-3 rounded bg-yellow-500" />
-          <span className="font-mono text-xs text-muted-foreground">okay</span>
+          <span className="font-mono text-xs text-muted-foreground">scheduled</span>
         </div>
         <div className="flex items-center gap-2">
           <div className="h-3 w-3 rounded bg-red-500" />

@@ -89,6 +89,21 @@ export function YearView({
                   const stats = getCompletionStats(dateKey)
                   const isToday = date.toDateString() === today
                   const hasActivities = stats.total > 0
+                  const isPast = date < new Date(today)
+
+                  // Color logic:
+                  // - Green: 100% complete
+                  // - Blue: 50%+ complete
+                  // - Yellow: scheduled + (future OR some progress)
+                  // - Red: past + 0% complete
+                  const getColor = () => {
+                    if (!hasActivities) return "hsl(var(--secondary))"
+                    if (stats.ratio === 1) return "#22c55e" // Green - complete
+                    if (stats.ratio >= 0.5) return "#5B6EE1" // Blue - good progress
+                    if (!isPast) return "#eab308" // Yellow - future, not yet happened
+                    if (stats.ratio > 0) return "#eab308" // Yellow - past but some progress
+                    return "#ef4444" // Red - past with 0% done
+                  }
 
                   return (
                     <button
@@ -98,18 +113,8 @@ export function YearView({
                         aspect-square rounded-sm transition-all hover:scale-150 hover:z-10
                         ${isToday ? "ring-1 ring-primary" : ""}
                       `}
-                      style={{
-                        backgroundColor: hasActivities
-                          ? stats.ratio === 1
-                            ? "#22c55e"
-                            : stats.ratio >= 0.5
-                              ? "#5B6EE1"
-                              : stats.ratio > 0
-                                ? "#eab308"
-                                : "#ef4444"
-                          : "hsl(var(--secondary))",
-                      }}
-                      title={`${date.toLocaleDateString()}: ${stats.completed}/${stats.total}`}
+                      style={{ backgroundColor: getColor() }}
+                      title={`${date.toLocaleDateString()}: ${stats.completed}/${stats.total}${!isPast && hasActivities ? " (scheduled)" : ""}`}
                     />
                   )
                 })}
@@ -120,10 +125,10 @@ export function YearView({
       </div>
 
       {/* Legend */}
-      <div className="mt-6 flex items-center justify-center gap-4">
+      <div className="mt-6 flex flex-wrap items-center justify-center gap-4">
         <div className="flex items-center gap-2">
           <div className="h-3 w-3 rounded bg-green-500" />
-          <span className="font-mono text-xs text-muted-foreground">100%</span>
+          <span className="font-mono text-xs text-muted-foreground">complete</span>
         </div>
         <div className="flex items-center gap-2">
           <div className="h-3 w-3 rounded bg-primary" />
@@ -131,11 +136,11 @@ export function YearView({
         </div>
         <div className="flex items-center gap-2">
           <div className="h-3 w-3 rounded bg-yellow-500" />
-          <span className="font-mono text-xs text-muted-foreground">{"<"}50%</span>
+          <span className="font-mono text-xs text-muted-foreground">scheduled</span>
         </div>
         <div className="flex items-center gap-2">
           <div className="h-3 w-3 rounded bg-red-500" />
-          <span className="font-mono text-xs text-muted-foreground">0%</span>
+          <span className="font-mono text-xs text-muted-foreground">missed</span>
         </div>
       </div>
     </div>
