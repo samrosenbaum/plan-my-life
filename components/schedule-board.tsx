@@ -54,7 +54,7 @@ export function ScheduleBoard({
     onDateChange(currentTime)
   }
 
-  const currentHour = currentTime.getHours()
+  const currentMinutes = currentTime.getHours() * 60 + currentTime.getMinutes()
 
   const handleAutoScroll = useCallback((e: React.DragEvent) => {
     const container = scrollContainerRef.current
@@ -161,10 +161,11 @@ export function ScheduleBoard({
         onDrop={stopAutoScroll}
       >
         {visibleSchedule.map((slot) => {
-          const slotHour = parseTimeToHour(slot.time)
-          const isCurrentSlot = isToday && slotHour === currentHour
-          const slotPassed = isToday ? slotHour < currentHour : isPast
+          const slotMinutes = parseTimeToMinutes(slot.time)
+          const isCurrentSlot = isToday && currentMinutes >= slotMinutes && currentMinutes < slotMinutes + 30
+          const slotPassed = isToday ? slotMinutes + 30 <= currentMinutes : isPast
           const slotIndex = schedule.findIndex((s) => s.id === slot.id)
+          const isHalfHour = isHalfHourSlot(slot.time)
 
           return (
             <TimeSlot
@@ -180,6 +181,7 @@ export function ScheduleBoard({
               isDropTarget={!!draggedActivity}
               isCurrentSlot={isCurrentSlot}
               slotPassed={slotPassed}
+              isHalfHour={isHalfHour}
             />
           )
         })}
@@ -188,12 +190,18 @@ export function ScheduleBoard({
   )
 }
 
-function parseTimeToHour(time: string): number {
-  const [hourStr, period] = time.split(" ")
-  let hour = Number.parseInt(hourStr.split(":")[0])
+function parseTimeToMinutes(time: string): number {
+  const [timeStr, period] = time.split(" ")
+  const [hourStr, minStr] = timeStr.split(":")
+  let hour = Number.parseInt(hourStr)
+  const minutes = Number.parseInt(minStr || "0")
   if (period === "PM" && hour !== 12) hour += 12
   if (period === "AM" && hour === 12) hour = 0
-  return hour
+  return hour * 60 + minutes
+}
+
+function isHalfHourSlot(time: string): boolean {
+  return time.includes(":30")
 }
 
 function CompletionBar({ schedule }: { schedule: ScheduleSlot[] }) {
@@ -232,6 +240,7 @@ interface TimeSlotProps {
   isDropTarget: boolean
   isCurrentSlot: boolean
   slotPassed: boolean
+  isHalfHour: boolean
 }
 
 const TimeSlot = memo(function TimeSlot({
@@ -246,6 +255,7 @@ const TimeSlot = memo(function TimeSlot({
   isDropTarget,
   isCurrentSlot,
   slotPassed,
+  isHalfHour,
 }: TimeSlotProps) {
   const [isDragOver, setIsDragOver] = useState(false)
   const [isResizing, setIsResizing] = useState(false)
@@ -328,6 +338,12 @@ const TimeSlot = memo(function TimeSlot({
 
   const displayDuration = isResizing ? currentDuration : duration
 
+  // Calculate display duration in 30-min slots (e.g., 2 = 1 hour)
+  const durationInMinutes = displayDuration * 30
+  const durationLabel = durationInMinutes >= 60
+    ? `${durationInMinutes / 60}h`
+    : `${durationInMinutes}m`
+
   return (
     <div
       ref={slotRef}
@@ -336,7 +352,8 @@ const TimeSlot = memo(function TimeSlot({
       onDrop={handleDrop}
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
-      className={`group relative flex items-start gap-4 rounded-2xl border-2 border-dashed p-3 transition-all duration-200 ease-out text-popover ${isCurrentSlot ? "ring-2 ring-primary ring-offset-2" : ""}
+      className={`group relative flex items-start gap-4 rounded-2xl border-2 transition-all duration-200 ease-out text-popover ${isCurrentSlot ? "ring-2 ring-primary ring-offset-2" : ""}
+        ${isHalfHour && !slot.activity ? "py-1.5 px-3 border-dashed" : "p-3 border-dashed"}
         ${
           slot.activity
             ? "border-transparent bg-secondary"
@@ -344,22 +361,24 @@ const TimeSlot = memo(function TimeSlot({
               ? "border-primary bg-primary/5 scale-[1.02]"
               : isDropTarget
                 ? "border-border/60 bg-secondary/50"
-                : "border-transparent bg-secondary/30"
+                : isHalfHour
+                  ? "border-transparent bg-transparent"
+                  : "border-transparent bg-secondary/30"
         }
       `}
       style={{
-        minHeight: slot.activity ? `${displayDuration * 52 + (displayDuration - 1) * 8}px` : undefined,
+        minHeight: slot.activity ? `${displayDuration * 32 + (displayDuration - 1) * 4}px` : undefined,
       }}
     >
       {isCurrentSlot && <div className="absolute -left-1 top-4 h-3 w-3 rounded-full bg-primary animate-pulse" />}
 
       {/* Time */}
       <span
-        className={`w-20 shrink-0 font-mono text-xs pt-1 ${slotPassed ? "text-muted-foreground/50" : "text-muted-foreground"}`}
+        className={`w-20 shrink-0 font-mono pt-1 ${isHalfHour ? "text-[10px]" : "text-xs"} ${slotPassed ? "text-muted-foreground/50" : "text-muted-foreground"}`}
       >
         {slot.time}
         {slot.activity && displayDuration > 1 && (
-          <span className="block text-[10px] text-muted-foreground/70">{displayDuration}h</span>
+          <span className="block text-[10px] text-muted-foreground/70">{durationLabel}</span>
         )}
       </span>
 
@@ -450,11 +469,14 @@ const TimeSlot = memo(function TimeSlot({
             )}
           </div>
         ) : (
-          <div className="flex h-9 items-center justify-center">
+          <div className={`flex items-center justify-center ${isHalfHour ? "h-5" : "h-9"}`}>
             {isDragOver ? (
               <span className="font-mono text-xs text-primary animate-pulse">drop here</span>
             ) : (
-              <div className={`h-px w-full ${slotPassed ? "bg-border/30" : "bg-border/50"}`} />
+              <div
+                className={`h-px w-full ${slotPassed ? "bg-border/30" : "bg-border/50"}`}
+                style={isHalfHour ? { backgroundImage: "repeating-linear-gradient(90deg, transparent, transparent 4px, currentColor 4px, currentColor 8px)", backgroundColor: "transparent", opacity: 0.3 } : undefined}
+              />
             )}
           </div>
         )}
