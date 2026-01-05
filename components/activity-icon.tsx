@@ -1,11 +1,13 @@
 import type React from "react"
+import type { JSX } from "react"
+
 interface ActivityIconProps {
   icon: string
   color: string
   className?: string
 }
 
-export function ActivityIcon({ icon, color, className }: ActivityIconProps) {
+export function ActivityIcon({ icon, color, className }: ActivityIconProps): JSX.Element {
   const icons: Record<string, React.ReactNode> = {
     barbell: (
       <svg
@@ -282,5 +284,5 @@ export function ActivityIcon({ icon, color, className }: ActivityIconProps) {
     ),
   }
 
-  return icons[icon] || icons.star
+  return (icons[icon] ?? icons.star) as JSX.Element
 }

@@ -10,7 +10,7 @@ interface SwipeOptions {
   threshold?: number
 }
 
-export function useSwipe(ref: RefObject<HTMLElement>, options: SwipeOptions) {
+export function useSwipe(ref: RefObject<HTMLElement | null>, options: SwipeOptions) {
   const touchStart = useRef<{ x: number; y: number } | null>(null)
   const threshold = options.threshold || 50
 
