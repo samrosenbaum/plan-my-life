@@ -14,6 +14,7 @@ interface ScheduleBoardProps {
   onDrop: (slotId: string, duration?: number) => void
   onRemove: (slotId: string) => void
   onToggleComplete: (slotId: string) => void
+  onToggleStepComplete?: (slotId: string, stepId: string) => void
   onResize?: (slotId: string, newDuration: number) => void
   draggedActivity: ActivityBlock | null
   onDateChange: (date: Date) => void
@@ -26,6 +27,7 @@ export function ScheduleBoard({
   onDrop,
   onRemove,
   onToggleComplete,
+  onToggleStepComplete,
   onResize,
   draggedActivity,
   onDateChange,
@@ -173,6 +175,7 @@ export function ScheduleBoard({
               onDrop={onDrop}
               onRemove={onRemove}
               onToggleComplete={onToggleComplete}
+              onToggleStepComplete={onToggleStepComplete}
               onResize={onResize}
               isDropTarget={!!draggedActivity}
               isCurrentSlot={isCurrentSlot}
@@ -224,6 +227,7 @@ interface TimeSlotProps {
   onDrop: (slotId: string, duration?: number) => void
   onRemove: (slotId: string) => void
   onToggleComplete: (slotId: string) => void
+  onToggleStepComplete?: (slotId: string, stepId: string) => void
   onResize?: (slotId: string, newDuration: number) => void
   isDropTarget: boolean
   isCurrentSlot: boolean
@@ -237,6 +241,7 @@ const TimeSlot = memo(function TimeSlot({
   onDrop,
   onRemove,
   onToggleComplete,
+  onToggleStepComplete,
   onResize,
   isDropTarget,
   isCurrentSlot,
@@ -387,6 +392,11 @@ const TimeSlot = memo(function TimeSlot({
                 >
                   {slot.activity.label}
                 </span>
+                {slot.activity.steps && slot.activity.steps.length > 0 && (
+                  <span className="rounded-full bg-primary/10 px-1.5 py-0.5 font-mono text-[10px] text-primary">
+                    {Object.values(slot.stepCompletions || {}).filter(Boolean).length}/{slot.activity.steps.length}
+                  </span>
+                )}
               </div>
               <button
                 onClick={() => onRemove(slot.id)}
@@ -395,6 +405,37 @@ const TimeSlot = memo(function TimeSlot({
                 <X className="h-4 w-4 text-muted-foreground hover:text-destructive" />
               </button>
             </div>
+
+            {/* Routine Steps */}
+            {slot.activity.steps && slot.activity.steps.length > 0 && (
+              <div className="mt-2 space-y-1 border-t border-border/30 pt-2">
+                {slot.activity.steps.map((step) => {
+                  const isStepComplete = slot.stepCompletions?.[step.id] ?? false
+                  return (
+                    <button
+                      key={step.id}
+                      onClick={() => onToggleStepComplete?.(slot.id, step.id)}
+                      className="flex w-full items-center gap-2 rounded-lg px-2 py-1 text-left hover:bg-secondary/50 transition-colors"
+                    >
+                      <div
+                        className={`flex h-4 w-4 shrink-0 items-center justify-center rounded border transition-all ${
+                          isStepComplete ? "border-green-500 bg-green-500 text-white" : "border-border"
+                        }`}
+                      >
+                        {isStepComplete && <Check className="h-3 w-3" />}
+                      </div>
+                      <span
+                        className={`font-mono text-[11px] ${
+                          isStepComplete ? "line-through text-muted-foreground" : "text-foreground"
+                        }`}
+                      >
+                        {step.label}
+                      </span>
+                    </button>
+                  )
+                })}
+              </div>
+            )}
 
             {onResize && (
               <div

@@ -1,3 +1,8 @@
+export interface RoutineStep {
+  id: string
+  label: string
+}
+
 export interface ActivityBlock {
   id: string
   label: string
@@ -5,6 +10,7 @@ export interface ActivityBlock {
   color: string
   instanceId?: string
   duration?: number // Number of time slots (default 1 = 1 hour)
+  steps?: RoutineStep[] // Optional steps for routines
 }
 
 export interface ScheduleSlot {
@@ -14,6 +20,7 @@ export interface ScheduleSlot {
   completed: boolean
   isContinuation?: boolean // Track if this slot is a continuation of a multi-hour activity
   parentSlotId?: string
+  stepCompletions?: Record<string, boolean> // Track completion of routine steps by step ID
 }
 
 export interface DaySchedule {

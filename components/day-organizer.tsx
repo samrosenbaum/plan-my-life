@@ -309,6 +309,35 @@ export function DayOrganizer() {
     })
   }
 
+  const handleToggleStepComplete = (slotId: string, stepId: string) => {
+    setSchedulesByDate((prev) => {
+      const schedule = prev[selectedDateKey]
+      if (!schedule) return prev
+      return {
+        ...prev,
+        [selectedDateKey]: {
+          ...schedule,
+          slots: schedule.slots.map((slot) => {
+            if (slot.id !== slotId) return slot
+            const currentCompletions = slot.stepCompletions || {}
+            const newCompletions = {
+              ...currentCompletions,
+              [stepId]: !currentCompletions[stepId],
+            }
+            // Auto-complete the slot if all steps are done
+            const activity = slot.activity
+            const allStepsComplete = activity?.steps?.every((s) => newCompletions[s.id]) ?? false
+            return {
+              ...slot,
+              stepCompletions: newCompletions,
+              completed: allStepsComplete,
+            }
+          }),
+        },
+      }
+    })
+  }
+
   const handleToggleCompleteOnDate = (dateKey: string, slotId: string) => {
     setSchedulesByDate((prev) => {
       const schedule = prev[dateKey]
@@ -440,6 +469,7 @@ export function DayOrganizer() {
             onDrop={handleDrop}
             onRemove={handleRemoveActivity}
             onToggleComplete={handleToggleComplete}
+            onToggleStepComplete={handleToggleStepComplete}
             onResize={handleResize}
             draggedActivity={draggedActivity}
             onDateChange={setSelectedDate}

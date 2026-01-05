@@ -3,8 +3,8 @@
 import type React from "react"
 
 import { useState, useEffect } from "react"
-import type { ActivityBlock } from "@/lib/types"
-import { Plus } from "lucide-react"
+import type { ActivityBlock, RoutineStep } from "@/lib/types"
+import { Plus, X, List } from "lucide-react"
 import { ActivityIcon } from "./activity-icon"
 
 interface CustomBlockCreatorProps {
@@ -32,6 +32,9 @@ export function CustomBlockCreator({ onAddBlock, onUpdateBlock, editingActivity,
   const [label, setLabel] = useState("")
   const [selectedColor, setSelectedColor] = useState(presetColors[0])
   const [selectedIcon, setSelectedIcon] = useState(presetIcons[0])
+  const [isRoutine, setIsRoutine] = useState(false)
+  const [steps, setSteps] = useState<RoutineStep[]>([])
+  const [newStepLabel, setNewStepLabel] = useState("")
 
   // Populate form when editing
   useEffect(() => {
@@ -39,9 +42,25 @@ export function CustomBlockCreator({ onAddBlock, onUpdateBlock, editingActivity,
       setLabel(editingActivity.label)
       setSelectedColor(editingActivity.color)
       setSelectedIcon(editingActivity.icon)
+      setIsRoutine(!!editingActivity.steps && editingActivity.steps.length > 0)
+      setSteps(editingActivity.steps || [])
       setIsOpen(true)
     }
   }, [editingActivity])
+
+  const addStep = () => {
+    if (!newStepLabel.trim()) return
+    const newStep: RoutineStep = {
+      id: `step-${Date.now()}`,
+      label: newStepLabel.trim(),
+    }
+    setSteps([...steps, newStep])
+    setNewStepLabel("")
+  }
+
+  const removeStep = (stepId: string) => {
+    setSteps(steps.filter((s) => s.id !== stepId))
+  }
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -54,6 +73,7 @@ export function CustomBlockCreator({ onAddBlock, onUpdateBlock, editingActivity,
         label: label.trim(),
         icon: selectedIcon,
         color: selectedColor,
+        steps: isRoutine && steps.length > 0 ? steps : undefined,
       }
       onUpdateBlock(updatedBlock)
     } else {
@@ -63,21 +83,26 @@ export function CustomBlockCreator({ onAddBlock, onUpdateBlock, editingActivity,
         label: label.trim(),
         icon: selectedIcon,
         color: selectedColor,
+        steps: isRoutine && steps.length > 0 ? steps : undefined,
       }
       onAddBlock(newBlock)
     }
 
+    resetForm()
+  }
+
+  const resetForm = () => {
     setLabel("")
     setSelectedColor(presetColors[0])
     setSelectedIcon(presetIcons[0])
+    setIsRoutine(false)
+    setSteps([])
+    setNewStepLabel("")
     setIsOpen(false)
   }
 
   const handleCancel = () => {
-    setLabel("")
-    setSelectedColor(presetColors[0])
-    setSelectedIcon(presetIcons[0])
-    setIsOpen(false)
+    resetForm()
     if (onCancelEdit) onCancelEdit()
   }
 
@@ -137,6 +162,55 @@ export function CustomBlockCreator({ onAddBlock, onUpdateBlock, editingActivity,
                   </button>
                 ))}
               </div>
+
+              {/* Routine Toggle */}
+              <button
+                type="button"
+                onClick={() => setIsRoutine(!isRoutine)}
+                className={`flex w-full items-center gap-2 rounded-lg border-2 border-dashed px-3 py-2 font-mono text-xs transition-all ${
+                  isRoutine ? "border-primary bg-primary/10 text-primary" : "border-border bg-secondary text-muted-foreground hover:border-primary/50"
+                }`}
+              >
+                <List className="h-3.5 w-3.5" />
+                {isRoutine ? "routine with steps" : "make it a routine"}
+              </button>
+
+              {/* Routine Steps */}
+              {isRoutine && (
+                <div className="space-y-2">
+                  <div className="flex gap-1.5">
+                    <input
+                      type="text"
+                      value={newStepLabel}
+                      onChange={(e) => setNewStepLabel(e.target.value)}
+                      onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), addStep())}
+                      placeholder="Add a step..."
+                      className="flex-1 rounded-lg border border-border bg-secondary px-2 py-1.5 font-mono text-xs placeholder:text-muted-foreground/50 focus:border-primary focus:outline-none"
+                    />
+                    <button
+                      type="button"
+                      onClick={addStep}
+                      disabled={!newStepLabel.trim()}
+                      className="rounded-lg bg-primary px-2 py-1.5 text-primary-foreground disabled:opacity-50"
+                    >
+                      <Plus className="h-3 w-3" />
+                    </button>
+                  </div>
+                  {steps.length > 0 && (
+                    <div className="space-y-1 max-h-24 overflow-y-auto">
+                      {steps.map((step, idx) => (
+                        <div key={step.id} className="flex items-center gap-2 rounded-lg bg-secondary px-2 py-1.5">
+                          <span className="font-mono text-xs text-muted-foreground">{idx + 1}.</span>
+                          <span className="flex-1 font-mono text-xs text-foreground truncate">{step.label}</span>
+                          <button type="button" onClick={() => removeStep(step.id)} className="text-muted-foreground hover:text-destructive">
+                            <X className="h-3 w-3" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
 
               <div className="flex gap-2">
                 <button
@@ -235,15 +309,90 @@ export function CustomBlockCreator({ onAddBlock, onUpdateBlock, editingActivity,
             </div>
           </div>
 
+          {/* Routine Toggle */}
+          <div>
+            <button
+              type="button"
+              onClick={() => setIsRoutine(!isRoutine)}
+              className={`flex w-full items-center gap-2 rounded-xl border-2 border-dashed px-4 py-2.5 font-mono text-xs transition-all ${
+                isRoutine ? "border-primary bg-primary/10 text-primary" : "border-border bg-secondary text-muted-foreground hover:border-primary/50"
+              }`}
+            >
+              <List className="h-4 w-4" />
+              {isRoutine ? "this is a routine with steps" : "make it a routine (add steps)"}
+            </button>
+          </div>
+
+          {/* Routine Steps */}
+          {isRoutine && (
+            <div className="space-y-3">
+              <label className="block font-mono text-xs text-muted-foreground">routine steps</label>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={newStepLabel}
+                  onChange={(e) => setNewStepLabel(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), addStep())}
+                  placeholder="e.g., Brush teeth, Shower..."
+                  className="flex-1 rounded-xl border-2 border-dashed border-border bg-secondary px-3 py-2 font-mono text-sm placeholder:text-muted-foreground/50 focus:border-primary focus:outline-none"
+                />
+                <button
+                  type="button"
+                  onClick={addStep}
+                  disabled={!newStepLabel.trim()}
+                  className="rounded-xl bg-primary px-3 py-2 text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+                >
+                  <Plus className="h-4 w-4" />
+                </button>
+              </div>
+              {steps.length > 0 && (
+                <div className="space-y-1.5 max-h-32 overflow-y-auto">
+                  {steps.map((step, idx) => (
+                    <div key={step.id} className="flex items-center gap-2 rounded-xl bg-secondary px-3 py-2">
+                      <span className="font-mono text-xs text-muted-foreground">{idx + 1}.</span>
+                      <span className="flex-1 font-mono text-sm text-foreground">{step.label}</span>
+                      <button type="button" onClick={() => removeStep(step.id)} className="text-muted-foreground hover:text-destructive transition-colors">
+                        <X className="h-4 w-4" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {steps.length === 0 && (
+                <p className="font-mono text-xs text-muted-foreground/60 italic">Add steps to your routine above</p>
+              )}
+            </div>
+          )}
+
           {/* Preview */}
           <div>
             <label className="mb-1.5 block font-mono text-xs text-muted-foreground">preview</label>
             <div
-              className="flex items-center gap-2 rounded-2xl border-2 border-dashed bg-secondary px-3 py-2.5"
+              className="rounded-2xl border-2 border-dashed bg-secondary px-3 py-2.5"
               style={{ borderColor: selectedColor }}
             >
-              <ActivityIcon icon={selectedIcon} color={selectedColor} className="h-5 w-5" />
-              <span className="font-mono text-xs text-foreground">{label || "Your activity"}</span>
+              <div className="flex items-center gap-2">
+                <ActivityIcon icon={selectedIcon} color={selectedColor} className="h-5 w-5" />
+                <span className="font-mono text-xs text-foreground">{label || "Your activity"}</span>
+                {isRoutine && steps.length > 0 && (
+                  <span className="ml-auto rounded-full bg-primary/10 px-2 py-0.5 font-mono text-[10px] text-primary">
+                    {steps.length} steps
+                  </span>
+                )}
+              </div>
+              {isRoutine && steps.length > 0 && (
+                <div className="mt-2 space-y-1 border-t border-border/50 pt-2">
+                  {steps.slice(0, 3).map((step, idx) => (
+                    <div key={step.id} className="flex items-center gap-2 font-mono text-[10px] text-muted-foreground">
+                      <div className="h-2.5 w-2.5 rounded-sm border border-current" />
+                      <span>{step.label}</span>
+                    </div>
+                  ))}
+                  {steps.length > 3 && (
+                    <div className="font-mono text-[10px] text-muted-foreground/60">+{steps.length - 3} more...</div>
+                  )}
+                </div>
+              )}
             </div>
           </div>
 
